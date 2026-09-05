@@ -1,4 +1,4 @@
-# Controle de Operação — SOMA Ambiental
+# Controle de Operação
 
 Substitui o caderno manuscrito de horas de máquina por um app que funciona
 **sem internet nenhuma** e entrega a planilha pronta, no mesmo formato que já
@@ -71,8 +71,8 @@ Coisas encontradas no caderno e na planilha reais:
   Virou lista.
 - **Vala perdida na transcrição** — o caderno traz `Vala 03`, a planilha
   descarta. Agora tem coluna própria.
-- **Erro de transcrição** — na planilha há uma linha de 16/07 com o nome
-  `Elismar` na coluna *Local*. Some por construção: o dado nunca é redigitado.
+- **Erro de transcrição** — há linha na planilha com o nome do operador
+  parado na coluna *Local*. Some por construção: o dado nunca é redigitado.
 - **Colunas que ninguém precisa digitar** — `Máquina` vem da escolha no app e
   `Horas trabalhada` é subtração. Duas das oito colunas somem do trabalho dela.
 
@@ -105,10 +105,9 @@ pegar sinal. Não precisa ser no local de trabalho.
 
 Tudo em [`app/js/config.js`](app/js/config.js):
 
-- **Operadores** — só 5 nomes foram confirmados pela planilha (Armando,
-  Elismar, Glauber, Gustavo, Pedro). O caderno tinha mais, mas a letra não
-  permitiu ler com segurança. Enquanto a lista não fecha, ninguém trava:
-  todo campo de lista tem "Outro (escrever)".
+- **Operadores** — só os nomes que apareciam na planilha estão na lista. O
+  caderno tinha mais, mas a letra não permitiu ler com segurança. Enquanto a
+  lista não fecha, ninguém trava: todo campo de lista tem "Outro (escrever)".
 - **Máquinas** — as 11 do Forms estão lá. Só a TEA 279 aparecia como
   `(Locado)` na planilha; confirmar quais outras são locadas, porque isso vai
   para a coluna *Máquina* do Excel.
@@ -117,6 +116,35 @@ Tudo em [`app/js/config.js`](app/js/config.js):
 - **`CODIGO_SUPERVISORA`** — trocar antes de publicar e passar só para ela.
 
 Mudou aqui? Publique de novo — os celulares se atualizam sozinhos.
+
+## Segurança
+
+O que o app protege, e contra o quê:
+
+- **Texto que vira código na tela.** Nome, local, atividade e observação podem
+  ser texto livre e atravessam um QR até o aparelho de outra pessoa. Tudo passa
+  por escape de HTML antes de virar tela (`js/texto.js`), e uma CSP sem
+  `unsafe-inline` barra script injetado mesmo que algo escape.
+- **Texto que vira fórmula no Excel.** O Excel avalia célula que começa com
+  `=` `+` `-` `@`, inclusive em CSV entre aspas. O CSV desarma com apóstrofo;
+  o `.xlsx` grava tudo como `inlineStr`, que nunca é fórmula.
+- **Modo da supervisora.** Protegido por código, guardado como PBKDF2-SHA256
+  com 600 mil iterações e sal próprio — o repositório é público e o código em
+  si não existe em lugar nenhum do projeto. Troque com `npm run codigo`.
+- **Nada sai do aparelho sozinho.** `connect-src 'self'` na CSP: o app não
+  consegue enviar dado para lugar nenhum. Toda saída é ato explícito de quem
+  está usando — compartilhar, baixar ou mostrar o QR.
+
+O que ele **não** protege:
+
+- O código de acesso resiste a curiosidade, não a alguém decidido. Cada
+  tentativa custa ~30 ms, então 4 dígitos caem em uns 5 minutos. **Use 10+
+  caracteres com letras** — aí o custo passa de qualquer prazo útil.
+- Quem tem o link enxerga a lista de operadores e máquinas: o app é
+  client-side e precisa dessa lista para funcionar. Sem servidor não há como
+  esconder, e não há servidor porque não há internet no local.
+- Os dados coletados ficam sem criptografia no armazenamento do navegador.
+  Quem destravar o aparelho dela lê a coleta da semana.
 
 ## Riscos conhecidos
 

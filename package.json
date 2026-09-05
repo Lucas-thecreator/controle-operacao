@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node tools/teste.js",
     "icones": "node tools/icones.js",
-    "servir": "node tools/servidor.js"
+    "servir": "node tools/servidor.js",
+    "codigo": "node tools/codigo.js"
   },
   "keywords": [],
   "author": "",

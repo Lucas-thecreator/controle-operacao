@@ -1,5 +1,5 @@
 /* ============================================================
-   CONFIGURAÇÃO — SOMA Ambiental / Controle de Operação
+   CONFIGURAÇÃO — Controle de Operação
    ------------------------------------------------------------
    TUDO que sua irmã precisa revisar está NESTE arquivo.
    Alterou aqui? Basta publicar de novo: os celulares se
@@ -8,7 +8,7 @@
 
 export const VERSAO_CONFIG = 1;
 
-/* Máquinas — lista tirada do Google Forms dela (11 máquinas).
+/* Máquinas (11).
    `planilha` é o texto que sai NA COLUNA "Máquina" do Excel.
    Só a TEA 279 aparecia como "(Locado)" na planilha; as outras
    estão sem sufixo até ela confirmar quais são locadas.        */
@@ -69,11 +69,14 @@ export const REGRAS = {
 export const ROTULO_OUTRO = 'Outro (escrever)';
 
 /* Código do modo "Faço a planilha".
-   TROQUE ESTE VALOR antes de publicar, e passe só para ela.
 
-   É uma tranca de porta, não um cofre: quem abrir o código-fonte
-   da página consegue ler. Serve para o que precisa servir — que
-   um operador não entre sem querer e exporte ou apague a coleta.
-   Guardar de verdade exigiria servidor, que este app não tem
-   justamente por não haver internet no local.                  */
-export const CODIGO_SUPERVISORA = '5555';
+   O repositório é público, então aqui fica só o HASH — o código
+   em si não existe em lugar nenhum do projeto.
+
+   Para trocar:  npm run codigo -- "seu-codigo-aqui"
+   e cole o resultado em CODIGO_HASH.
+
+   Use 10+ caracteres com letras. Ver app/js/codigo.js para o
+   que essa proteção alcança e o que ela não alcança.          */
+export const CODIGO_SAL = '1bfefdf181039540a901d50247232740';
+export const CODIGO_HASH = '6b665ac649ad383bb1c73594d98ed80fe8aff0f6da47c4f604e7ffe6eadc8b6b';

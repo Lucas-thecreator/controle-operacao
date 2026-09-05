@@ -64,8 +64,17 @@ export function paraPlanilha(registros) {
    sem passar pelo assistente de importação.                   */
 export function paraCsv(registros) {
   const linhas = paraPlanilha(registros);
+  /* O Excel avalia como FÓRMULA toda célula que começa com
+     = + - @ (ou tab/CR). Num CSV, aspas não protegem — ele
+     avalia mesmo entre aspas. Então um operador que digitasse
+     "=1+1" num campo "Outro" mandaria uma fórmula para rodar na
+     máquina dela. O apóstrofo à frente desarma.
+     O .xlsx não precisa disso: lá tudo vira <inlineStr>, que o
+     Excel nunca interpreta como fórmula.                       */
+  const desarmarFormula = (s) => (/^[=+\-@\t\r]/.test(s) ? "'" + s : s);
+
   const campo = (v) => {
-    const s = String(v ?? '');
+    const s = desarmarFormula(String(v ?? ''));
     return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
   const brData = (iso) => iso.split('-').reverse().join('/');

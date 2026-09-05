@@ -119,6 +119,37 @@ ok(csv.replace(/^﻿/, '').split('\r\n')[0].startsWith('Data;Operador;Máquina')
 ok(csv.includes('14/07/2026'), 'data em formato brasileiro no CSV');
 ok(csv.includes('1,4'), 'número com vírgula decimal no CSV');
 
+console.log('\n=== 4b. Texto hostil não vira código ===');
+/* Dois caminhos de execução, um em cada formato de saída:
+   HTML na tela dela, e fórmula do Excel na planilha.          */
+const HOSTIL = [{
+  id: 'mal01', data: '2026-09-05', maquina: 'TEA279', hIni: 100, hFim: 102,
+  operador: '=1+1', local: '<img src=x onerror="alert(1)">',
+  atividade: '@SUM(A1:A9)', vala: '', obs: '+cmd|calc',
+}];
+
+const csvHostil = paraCsv(HOSTIL);
+const celulas = csvHostil.split('\r\n')[1].split(';');
+ok(celulas.every((c) => !/^[=+\-@]/.test(c.replace(/^"/, ''))),
+  'CSV: nenhuma célula começa com = + - @ (Excel não roda fórmula)');
+ok(csvHostil.includes("'=1+1"), 'CSV: o valor original continua legível, só desarmado');
+
+const bytesHostis = gerarXlsx(COLUNAS, paraPlanilha(HOSTIL), 'Controle');
+const arqHostil = path.join(process.cwd(), 'tools', 'saida-hostil.xlsx');
+fs.writeFileSync(arqHostil, bytesHostis);
+const livroHostil = XLSX.read(fs.readFileSync(arqHostil), { type: 'buffer' });
+const abaHostil = livroHostil.Sheets[livroHostil.SheetNames[0]];
+ok(abaHostil.B2 && abaHostil.B2.t === 's' && !abaHostil.B2.f,
+  'xlsx: "=1+1" entra como texto, sem fórmula anexada');
+ok(abaHostil.B2 && abaHostil.B2.v === '=1+1', 'xlsx: valor preservado exatamente');
+fs.unlinkSync(arqHostil);
+
+/* o escape de HTML é do lado da tela — aqui só a garantia de que
+   o dado atravessa o QR sem ser alterado, para o escape decidir */
+const idaEVolta = new Montador().receber(empacotar(HOSTIL)[0]);
+ok(idaEVolta.registros[0].local === '<img src=x onerror="alert(1)">',
+  'QR: texto hostil chega intacto do outro lado (quem protege é o escape na tela)');
+
 console.log('\n=== 5. Lançamento retroativo ===');
 /* Bug encontrado em uso: lançar um registro de ontem puxava o
    horímetro final de HOJE. A posição na cadeia tem de sair da

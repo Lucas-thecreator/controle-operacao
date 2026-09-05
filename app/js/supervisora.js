@@ -9,6 +9,7 @@ import { Montador } from './pack.js';
 import { COLUNAS, paraPlanilha, paraCsv, horasDe, nomeMaquina, brHorimetro } from './planilha.js';
 import { gerarXlsx } from './xlsxgen.js';
 import { analisarCadeia } from './validacao.js';
+import { esc } from './texto.js';
 
 const $ = (s) => document.querySelector(s);
 const brData = (iso) => (iso || '').split('-').reverse().join('/');
@@ -31,8 +32,8 @@ function progresso(estado) {
 function recibo(tipo, titulo, itens) {
   const alvo = $('#recibo');
   alvo.hidden = false;
-  alvo.innerHTML = `<div class="msg ${tipo}"><strong>${titulo}</strong>`
-    + itens.map((t) => `<div>${t}</div>`).join('') + '</div>';
+  alvo.innerHTML = `<div class="msg ${esc(tipo)}"><strong>${esc(titulo)}</strong>`
+    + itens.map((t) => `<div>${esc(t)}</div>`).join('') + '</div>';
 }
 
 const vibrar = (padrao) => { try { navigator.vibrate && navigator.vibrate(padrao); } catch {} };
@@ -187,7 +188,7 @@ async function pintarConferencia() {
   $('#problemas').innerHTML = problemas.length
     ? `<div class="msg ${problemas.some((p) => p.tipo === 'erro') ? 'erro' : 'aviso'}">`
       + `<strong>${problemas.length} ponto(s) para conferir antes de exportar:</strong>`
-      + problemas.map((p) => `<div>${p.texto}</div>`).join('') + '</div>'
+      + problemas.map((p) => `<div>${esc(p.texto)}</div>`).join('') + '</div>'
     : '<div class="msg ok"><strong>Nenhuma inconsistência encontrada.</strong>'
       + '<div>Horímetros encadeados, sem buraco nem sobreposição.</div></div>';
 
@@ -200,9 +201,9 @@ async function pintarConferencia() {
       const marca = suspeitos.get(r.id);
       const classe = marca === 'erro' ? ' class="invalida"' : marca ? ' class="suspeita"' : '';
       return `<tr${classe}>`
-        + `<td>${brData(r.data)}</td><td>${r.operador}</td><td>${nomeMaquina(r.maquina)}</td>`
+        + `<td>${brData(r.data)}</td><td>${esc(r.operador)}</td><td>${esc(nomeMaquina(r.maquina))}</td>`
         + `<td>${brHorimetro(r.hIni)}</td><td>${brHorimetro(r.hFim)}</td><td>${brNum(horasDe(r))}</td>`
-        + `<td>${r.local}</td><td>${r.atividade}</td><td>${r.vala || ''}</td><td>${r.obs || ''}</td>`
+        + `<td>${esc(r.local)}</td><td>${esc(r.atividade)}</td><td>${esc(r.vala)}</td><td>${esc(r.obs)}</td>`
         + '</tr>';
     }).join('');
   $('#tabela').innerHTML = cabecalho + corpo;

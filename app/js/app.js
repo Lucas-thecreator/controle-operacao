@@ -1,6 +1,6 @@
 /* Arranque e navegação entre as telas. */
 import * as db from './db.js';
-import { CODIGO_SUPERVISORA } from './config.js';
+import { confere, temCripto } from './codigo.js';
 import { iniciarOperador, recarregarLista } from './operador.js';
 import { ligarEntrega, abrirEntrega } from './entrega.js';
 import { iniciarSupervisora, pararTudo } from './supervisora.js';
@@ -35,7 +35,25 @@ async function pedirSupervisora() {
 }
 
 async function conferirCodigo() {
-  if ($('#codigo').value.trim() !== CODIGO_SUPERVISORA) {
+  const digitado = $('#codigo').value.trim();
+  if (!digitado) return;
+
+  if (!temCripto()) {
+    $('#codigo-msg').innerHTML =
+      '<div class="msg erro">Abra o app pelo endereço https para conferir o código.</div>';
+    return;
+  }
+
+  /* a conferência é lenta de propósito (PBKDF2) — avisa que
+     está trabalhando para não parecer travado                 */
+  const botao = $('#btn-entrar-supervisora');
+  botao.disabled = true;
+  botao.textContent = 'Conferindo…';
+  const certo = await confere(digitado);
+  botao.disabled = false;
+  botao.textContent = 'Entrar';
+
+  if (!certo) {
     $('#codigo-msg').innerHTML = '<div class="msg erro">Código errado.</div>';
     $('#codigo').value = '';
     $('#codigo').focus();

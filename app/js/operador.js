@@ -11,6 +11,7 @@ import * as db from './db.js';
 import { validar, acharVizinhos } from './validacao.js';
 import { horasDe, nomeMaquina, brHorimetro } from './planilha.js';
 import { empacotar } from './pack.js';
+import { esc } from './texto.js';
 
 const $ = (s, raiz = document) => raiz.querySelector(s);
 const hoje = () => new Date().toISOString().slice(0, 10);
@@ -64,8 +65,8 @@ const limparMensagens = () => { caixa.innerHTML = ''; };
 function mostrar(tipo, titulo, itens) {
   const div = document.createElement('div');
   div.className = 'msg ' + tipo;
-  div.innerHTML = '<strong>' + titulo + '</strong>' +
-    itens.map((t) => '<div>' + t + '</div>').join('');
+  div.innerHTML = '<strong>' + esc(titulo) + '</strong>' +
+    itens.map((t) => '<div>' + esc(t) + '</div>').join('');
   caixa.append(div);
 }
 
@@ -130,8 +131,8 @@ async function pintarLista() {
     if (r.entregue) li.className = 'entregue';
     const info = document.createElement('div');
     info.innerHTML =
-      `<div class="quando">${brData(r.data)} · ${nomeMaquina(r.maquina)}</div>` +
-      `<div class="detalhe">${r.operador} · ${r.local}${r.vala ? ' · vala ' + r.vala : ''} · ${r.atividade}</div>` +
+      `<div class="quando">${brData(r.data)} · ${esc(nomeMaquina(r.maquina))}</div>` +
+      `<div class="detalhe">${esc(r.operador)} · ${esc(r.local)}${r.vala ? ' · vala ' + esc(r.vala) : ''} · ${esc(r.atividade)}</div>` +
       `<div class="detalhe">${brHorimetro(r.hIni)} → ${brHorimetro(r.hFim)}${r.entregue ? ' · entregue' : ''}</div>`;
     const lado = document.createElement('div');
     lado.innerHTML = `<span class="horas">${brNum(horasDe(r))} h</span>`;
