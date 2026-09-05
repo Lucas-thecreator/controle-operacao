@@ -1,0 +1,263 @@
+/* ============================================================
+   Tela do operador.
+   Duas obsessões aqui:
+   1) não perder registro — grava local, sempre, e nunca apaga
+      o que já foi entregue;
+   2) não deixar digitar besteira — lista em vez de texto livre,
+      e a conta das horas aparece antes de salvar.
+   ============================================================ */
+import { OPERADORES, MAQUINAS, LOCAIS, VALAS, ATIVIDADES, ROTULO_OUTRO } from './config.js';
+import * as db from './db.js';
+import { validar, acharVizinhos } from './validacao.js';
+import { horasDe, nomeMaquina, brHorimetro } from './planilha.js';
+import { empacotar } from './pack.js';
+
+const $ = (s, raiz = document) => raiz.querySelector(s);
+const hoje = () => new Date().toISOString().slice(0, 10);
+const brData = (iso) => (iso || '').split('-').reverse().join('/');
+const brNum = (n) => String(n).replace('.', ',');
+const num = (v) => {
+  const s = String(v ?? '').trim().replace(',', '.');
+  return s === '' ? NaN : Number(s);
+};
+const novoId = () =>
+  Date.now().toString(36).slice(-5) + Math.random().toString(36).slice(2, 5);
+
+const form = $('#form-registro');
+let avisosAceitos = false;   // segundo toque confirma o que é só suspeito
+let aoEntregar = null;       // callback para trocar de tela
+
+/* ---------- montagem dos campos ---------- */
+function encher(select, itens, { comOutro = true, vazio = null } = {}) {
+  select.innerHTML = '';
+  if (vazio !== null) select.append(new Option(vazio, ''));
+  for (const it of itens) {
+    const [valor, rotulo] = Array.isArray(it) ? it : [it, it];
+    select.append(new Option(rotulo, valor));
+  }
+  if (comOutro) select.append(new Option(ROTULO_OUTRO, '__outro'));
+}
+
+function ligarOutro(nomeCampo) {
+  const select = form.elements[nomeCampo];
+  const texto = form.elements[nomeCampo + 'Outro'];
+  select.addEventListener('change', () => {
+    const outro = select.value === '__outro';
+    texto.hidden = !outro;
+    if (outro) texto.focus(); else texto.value = '';
+    limparMensagens();
+  });
+}
+
+const valorDe = (nomeCampo) => {
+  const select = form.elements[nomeCampo];
+  if (!select) return '';
+  return select.value === '__outro'
+    ? form.elements[nomeCampo + 'Outro'].value.trim()
+    : select.value;
+};
+
+/* ---------- mensagens ---------- */
+const caixa = $('#mensagens');
+const limparMensagens = () => { caixa.innerHTML = ''; };
+
+function mostrar(tipo, titulo, itens) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + tipo;
+  div.innerHTML = '<strong>' + titulo + '</strong>' +
+    itens.map((t) => '<div>' + t + '</div>').join('');
+  caixa.append(div);
+}
+
+/* O horímetro inicial NÃO é preenchido pelo app, de propósito.
+   Ele é uma leitura do painel da máquina, não um número que dê
+   para deduzir. Sugerir o valor convidava o operador a aceitar
+   sem olhar — e aí o campo virava cópia do registro anterior em
+   vez de observação, deixando a cadeia bonita e talvez errada.
+   A conferência continua, só que na hora de salvar: comparar
+   uma leitura real com a expectativa é útil; fabricá-la, não. */
+
+function atualizarConta() {
+  const alvo = $('#conta-horas');
+  const ini = num(form.elements.hIni.value);
+  const fim = num(form.elements.hFim.value);
+  if (Number.isNaN(ini) || Number.isNaN(fim)) { alvo.hidden = true; return; }
+  const h = Math.round((fim - ini) * 10) / 10;
+  alvo.hidden = false;
+  alvo.textContent = h < 0
+    ? `Isso daria ${brNum(h)} hora — o final está menor que o inicial.`
+    : `${brNum(h)} hora${h === 1 ? '' : 's'} trabalhada${h === 1 ? '' : 's'}.`;
+  alvo.style.background = h < 0 ? 'var(--erro-fundo)' : 'var(--ok-fundo)';
+  alvo.style.color = h < 0 ? 'var(--erro)' : 'var(--ok)';
+}
+
+/* ---------- lista e pendências ---------- */
+async function pintarLista() {
+  const registros = await db.listarRegistros();
+  const lista = $('#lista-registros');
+  const pendentes = registros.filter((r) => !r.entregue);
+
+  const banner = $('#aviso-pendentes');
+  if (pendentes.length) {
+    const antigo = pendentes.map((r) => r.data).sort()[0];
+    banner.hidden = false;
+    banner.textContent = `${pendentes.length} registro${pendentes.length === 1 ? '' : 's'} `
+      + `ainda não entregue${pendentes.length === 1 ? '' : 's'} — o mais antigo é de ${brData(antigo)}.`;
+  } else {
+    banner.hidden = true;
+  }
+
+  const botao = $('#btn-entregar');
+  botao.hidden = pendentes.length === 0;
+  botao.textContent = `Entregar ${pendentes.length} registro${pendentes.length === 1 ? '' : 's'}`;
+
+  const entregues = registros.length - pendentes.length;
+  $('#contador-registros').textContent = !registros.length ? ''
+    : entregues ? `(${pendentes.length} a entregar · ${entregues} entregue${entregues === 1 ? '' : 's'})`
+    : `(${pendentes.length} a entregar)`;
+
+  if (!registros.length) {
+    lista.innerHTML = '<li class="vazio">Nenhum registro ainda.</li>';
+    return;
+  }
+
+  const ordem = [...pendentes.reverse(),
+    ...registros.filter((r) => r.entregue).reverse()].slice(0, 40);
+
+  lista.innerHTML = '';
+  for (const r of ordem) {
+    const li = document.createElement('li');
+    if (r.entregue) li.className = 'entregue';
+    const info = document.createElement('div');
+    info.innerHTML =
+      `<div class="quando">${brData(r.data)} · ${nomeMaquina(r.maquina)}</div>` +
+      `<div class="detalhe">${r.operador} · ${r.local}${r.vala ? ' · vala ' + r.vala : ''} · ${r.atividade}</div>` +
+      `<div class="detalhe">${brHorimetro(r.hIni)} → ${brHorimetro(r.hFim)}${r.entregue ? ' · entregue' : ''}</div>`;
+    const lado = document.createElement('div');
+    lado.innerHTML = `<span class="horas">${brNum(horasDe(r))} h</span>`;
+    if (!r.entregue) {
+      const x = document.createElement('button');
+      x.className = 'apagar';
+      x.textContent = '×';
+      x.title = 'Apagar este registro';
+      x.addEventListener('click', async () => {
+        if (!confirm(`Apagar o registro de ${brData(r.data)}, ${brNum(horasDe(r))} h?`)) return;
+        await db.apagarRegistro(r.id);
+        pintarLista();
+      });
+      lado.append(x);
+    }
+    li.append(info, lado);
+    lista.append(li);
+  }
+}
+
+/* ---------- salvar ---------- */
+async function salvar(ev) {
+  ev.preventDefault();
+  limparMensagens();
+
+  const registro = {
+    id: novoId(),
+    data: form.elements.data.value,
+    operador: valorDe('operador'),
+    maquina: form.elements.maquina.value,
+    hIni: num(form.elements.hIni.value),
+    hFim: num(form.elements.hFim.value),
+    local: valorDe('local'),
+    vala: form.elements.vala.value,
+    atividade: valorDe('atividade'),
+    obs: form.elements.obs.value.trim(),
+    criadoEm: new Date().toISOString(),
+    entregue: false,
+  };
+
+  const vizinhos = acharVizinhos(await db.listarRegistros(), registro.maquina, registro.data);
+  const { erros, avisos } = validar(registro, vizinhos);
+
+  if (erros.length) {
+    avisosAceitos = false;
+    mostrar('erro', 'Falta corrigir:', erros);
+    caixa.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  if (avisos.length && !avisosAceitos) {
+    avisosAceitos = true;
+    mostrar('aviso', 'Confere antes de salvar:', avisos);
+    const botao = form.querySelector('button[type="submit"]');
+    botao.textContent = 'Está certo, pode salvar';
+    caixa.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  await db.salvarRegistro(registro);
+
+  /* o que quase sempre se repete fica guardado para o próximo */
+  await db.guardar('ultimoOperador', registro.operador);
+  await db.guardar('ultimaMaquina', registro.maquina);
+
+  avisosAceitos = false;
+  form.querySelector('button[type="submit"]').textContent = 'Salvar registro';
+
+  form.elements.hIni.value = '';
+  form.elements.hFim.value = '';
+  form.elements.obs.value = '';
+  $('#conta-horas').hidden = true;
+
+  mostrar('ok', 'Registro salvo.', [
+    `${brData(registro.data)} · ${nomeMaquina(registro.maquina)} · ${brNum(horasDe(registro))} h`,
+  ]);
+  setTimeout(limparMensagens, 4000);
+
+  await pintarLista();
+}
+
+/* ---------- entrada ---------- */
+export async function iniciarOperador(irParaEntrega) {
+  aoEntregar = irParaEntrega;
+
+  encher(form.elements.operador, OPERADORES, { vazio: 'Escolha…' });
+  encher(form.elements.maquina, MAQUINAS.map((m) => [m.id, m.nome]),
+    { vazio: 'Escolha…', comOutro: false });
+  encher(form.elements.local, LOCAIS, { vazio: 'Escolha…' });
+  encher(form.elements.atividade, ATIVIDADES, { vazio: 'Escolha…' });
+  encher(form.elements.vala, VALAS, { vazio: '—', comOutro: false });
+
+  ligarOutro('operador');
+  ligarOutro('local');
+  ligarOutro('atividade');
+
+  form.elements.data.value = hoje();
+  form.elements.data.max = hoje();
+
+  const [op, mq] = await Promise.all([db.ler('ultimoOperador'), db.ler('ultimaMaquina')]);
+  if (op) {
+    if (OPERADORES.includes(op)) form.elements.operador.value = op;
+    else {
+      form.elements.operador.value = '__outro';
+      form.elements.operadorOutro.hidden = false;
+      form.elements.operadorOutro.value = op;
+    }
+  }
+  if (mq) form.elements.maquina.value = mq;
+
+  form.elements.hIni.addEventListener('input', atualizarConta);
+  form.elements.hFim.addEventListener('input', atualizarConta);
+  form.addEventListener('input', () => {
+    if (!avisosAceitos) return;
+    avisosAceitos = false;
+    form.querySelector('button[type="submit"]').textContent = 'Salvar registro';
+  });
+  form.addEventListener('submit', salvar);
+
+  $('#btn-entregar').addEventListener('click', async () => {
+    const pendentes = (await db.listarRegistros()).filter((r) => !r.entregue);
+    if (!pendentes.length) return;
+    aoEntregar(empacotar(pendentes), pendentes);
+  });
+
+  await pintarLista();
+}
+
+export const recarregarLista = pintarLista;

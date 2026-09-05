@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "controle",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "servir"
+      ],
+      "port": 8080
+    }
+  ]
+}

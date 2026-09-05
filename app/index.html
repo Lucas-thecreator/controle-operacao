@@ -1,0 +1,199 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F5597">
+<title>Controle de Operação</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icone-192.png">
+<link rel="apple-touch-icon" href="icons/icone-192.png">
+<link rel="stylesheet" href="styles.css">
+
+<header id="topo">
+  <h1>Controle de Operação</h1>
+  <button id="btn-trocar-perfil" class="link" hidden>Trocar</button>
+</header>
+
+<main>
+
+<!-- ============ primeira abertura ============ -->
+<section id="tela-inicio" class="tela">
+  <p class="intro">Quem está usando este aparelho?</p>
+  <button class="escolha" data-perfil="operador">
+    <strong>Sou operador</strong>
+    <span>Registro as horas da minha máquina</span>
+  </button>
+  <button class="escolha" data-perfil="supervisora">
+    <strong>Faço a planilha</strong>
+    <span>Recolho os registros e gero o Excel</span>
+  </button>
+  <p class="rodape">Dá para trocar depois, lá em cima.</p>
+
+  <div id="trava-supervisora" hidden>
+    <p class="intro">Este modo é só de quem monta a planilha.</p>
+    <label>Código
+      <input type="password" id="codigo" inputmode="numeric" autocomplete="off">
+    </label>
+    <div id="codigo-msg"></div>
+    <button id="btn-entrar-supervisora" class="principal">Entrar</button>
+    <button id="btn-cancelar-codigo" class="link">Voltar</button>
+  </div>
+</section>
+
+<!-- ============ operador ============ -->
+<section id="tela-operador" class="tela" hidden>
+
+  <div id="aviso-pendentes" class="alerta-pendente" hidden></div>
+
+  <form id="form-registro" novalidate>
+    <label>Data
+      <input type="date" name="data" required>
+    </label>
+
+    <label>Operador
+      <select name="operador" required></select>
+    </label>
+    <input type="text" name="operadorOutro" class="campo-outro" placeholder="Escreva o nome" hidden>
+
+    <label>Máquina
+      <select name="maquina" required></select>
+    </label>
+
+    <div class="dupla">
+      <label>Horímetro inicial
+        <input type="text" name="hIni" inputmode="decimal" autocomplete="off" required placeholder="0000,0">
+      </label>
+      <label>Horímetro final
+        <input type="text" name="hFim" inputmode="decimal" autocomplete="off" required placeholder="0000,0">
+      </label>
+    </div>
+
+    <p id="conta-horas" class="conta" hidden></p>
+
+    <label>Local
+      <select name="local" required></select>
+    </label>
+    <input type="text" name="localOutro" class="campo-outro" placeholder="Escreva o local" hidden>
+
+    <label>Vala <span class="opcional">(se tiver)</span>
+      <select name="vala"></select>
+    </label>
+
+    <label>Tipo de serviço
+      <select name="atividade" required></select>
+    </label>
+    <input type="text" name="atividadeOutro" class="campo-outro" placeholder="Escreva o serviço" hidden>
+
+    <label>Observação <span class="opcional">(se precisar)</span>
+      <input type="text" name="obs" autocomplete="off" placeholder="">
+    </label>
+
+    <div id="mensagens"></div>
+
+    <button type="submit" class="principal">Salvar registro</button>
+  </form>
+
+  <section class="bloco">
+    <h2>Meus registros <span id="contador-registros" class="contador"></span></h2>
+    <ul id="lista-registros" class="lista"></ul>
+  </section>
+
+  <button id="btn-entregar" class="principal entregar" hidden></button>
+</section>
+
+<!-- ============ entrega (QR) ============ -->
+<section id="tela-entrega" class="tela" hidden>
+
+  <div class="abas">
+    <button class="aba ativa" data-entrega="enviar">Enviar</button>
+    <button class="aba" data-entrega="qr">Mostrar QR</button>
+  </div>
+
+  <div id="entrega-enviar" class="painel">
+    <p class="intro">Precisa de internet só agora. O que você digitou já está
+      guardado no aparelho.</p>
+
+    <button id="btn-compartilhar" class="principal">Enviar pelo WhatsApp</button>
+    <button id="btn-baixar-arquivo" class="secundario largo">Salvar como arquivo</button>
+
+    <div id="entrega-msg"></div>
+
+    <details class="detalhe-tecnico">
+      <summary>Não consegui enviar — quero copiar o texto</summary>
+      <p class="rodape">Copie tudo e mande por qualquer meio: WhatsApp, SMS, e-mail.</p>
+      <textarea id="texto-entrega" readonly rows="4"></textarea>
+      <button id="btn-copiar" class="secundario largo">Copiar</button>
+    </details>
+  </div>
+
+  <div id="entrega-qr" class="painel" hidden>
+    <p class="intro"><strong>Passe todas as partes.</strong> Se faltar uma, não vale.</p>
+
+    <div id="qr-palco"></div>
+    <p id="qr-legenda" class="qr-legenda"></p>
+
+    <div class="qr-controles">
+      <button id="qr-anterior" class="secundario">◀ Anterior</button>
+      <button id="qr-proximo" class="secundario">Próxima ▶</button>
+    </div>
+  </div>
+
+  <div class="acoes-fim">
+    <button id="btn-marcar-entregue" class="principal">Pronto, já entreguei</button>
+    <button id="btn-voltar-operador" class="link">Voltar sem entregar</button>
+  </div>
+  <p class="rodape">Nada é apagado. Dá para mandar de novo se precisar.</p>
+</section>
+
+<!-- ============ supervisora ============ -->
+<section id="tela-supervisora" class="tela" hidden>
+
+  <div class="abas">
+    <button class="aba ativa" data-aba="recolher">Recolher</button>
+    <button class="aba" data-aba="conferir">Conferir</button>
+  </div>
+
+  <div id="painel-recolher" class="painel">
+    <div id="progresso-scan" class="progresso" hidden></div>
+
+    <div id="area-camera" hidden>
+      <video id="camera" playsinline muted></video>
+      <button id="btn-parar-camera" class="secundario">Parar câmera</button>
+    </div>
+
+    <button id="btn-abrir-camera" class="principal">Ligar a câmera</button>
+
+    <p class="ou">ou</p>
+
+    <label class="botao-arquivo">
+      Ler QR de uma foto
+      <input type="file" id="entrada-foto" accept="image/*" multiple hidden>
+    </label>
+    <p class="rodape">Para quando mandarem print do QR em vez de você ir até lá.
+      Pode escolher várias fotos de uma vez.</p>
+
+    <details class="detalhe-tecnico">
+      <summary>Recebi como texto (WhatsApp, e-mail)</summary>
+      <textarea id="texto-colado" rows="4" placeholder="Cole aqui o texto que mandaram"></textarea>
+      <button id="btn-ler-texto" class="secundario largo">Ler o texto</button>
+    </details>
+
+    <div id="recibo" class="recibo" hidden></div>
+  </div>
+
+  <div id="painel-conferir" class="painel" hidden>
+    <div id="resumo" class="resumo"></div>
+    <div id="problemas" class="problemas"></div>
+    <div class="tabela-rolagem"><table id="tabela"></table></div>
+
+    <div class="acoes-fim">
+      <button id="btn-xlsx" class="principal">Baixar Excel (.xlsx)</button>
+      <button id="btn-csv" class="secundario">Baixar CSV</button>
+      <button id="btn-limpar" class="link perigo">Limpar o que já exportei</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script src="vendor/qrcode.js"></script>
+<script src="vendor/jsQR.js"></script>
+<script type="module" src="js/app.js"></script>

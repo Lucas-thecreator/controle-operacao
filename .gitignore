@@ -1,0 +1,11 @@
+# Dependências — só de desenvolvimento. O app publicado não usa
+# nenhuma biblioteca externa além das duas em app/vendor/.
+node_modules/
+
+# Saída dos testes
+tools/saida-teste.xlsx
+
+# Material de origem: fotos do caderno e da planilha.
+# Trazem nomes de operadores e dados da empresa — não sobem.
+/*.jpeg
+/*.jpg

@@ -1,0 +1,20 @@
+{
+  "name": "soma-controle-operacao",
+  "version": "1.0.0",
+  "description": "Controle de operacao de maquinas — PWA offline",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tools/teste.js",
+    "icones": "node tools/icones.js",
+    "servir": "node tools/servidor.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "jsqr": "^1.4.0",
+    "qrcode-generator": "^2.0.4",
+    "xlsx": "^0.18.5"
+  }
+}
