@@ -3,10 +3,12 @@
    Duas obsessões aqui:
    1) não perder registro — grava local, sempre, e nunca apaga
       o que já foi entregue;
-   2) não deixar digitar besteira — lista em vez de texto livre,
-      e a conta das horas aparece antes de salvar.
+   2) data e máquina continuam por lista (evitam erro de digitação
+      em algo que é sempre o mesmo conjunto fechado); os demais
+      campos são texto livre, e a conta das horas aparece antes
+      de salvar.
    ============================================================ */
-import { OPERADORES, MAQUINAS, LOCAIS, VALAS, ATIVIDADES, ROTULO_OUTRO } from './config.js';
+import { MAQUINAS } from './config.js';
 import * as db from './db.js';
 import { validar, acharVizinhos } from './validacao.js';
 import { horasDe, nomeMaquina, brHorimetro } from './planilha.js';
@@ -29,34 +31,14 @@ let avisosAceitos = false;   // segundo toque confirma o que é só suspeito
 let aoEntregar = null;       // callback para trocar de tela
 
 /* ---------- montagem dos campos ---------- */
-function encher(select, itens, { comOutro = true, vazio = null } = {}) {
+function encher(select, itens, { vazio = null } = {}) {
   select.innerHTML = '';
   if (vazio !== null) select.append(new Option(vazio, ''));
   for (const it of itens) {
     const [valor, rotulo] = Array.isArray(it) ? it : [it, it];
     select.append(new Option(rotulo, valor));
   }
-  if (comOutro) select.append(new Option(ROTULO_OUTRO, '__outro'));
 }
-
-function ligarOutro(nomeCampo) {
-  const select = form.elements[nomeCampo];
-  const texto = form.elements[nomeCampo + 'Outro'];
-  select.addEventListener('change', () => {
-    const outro = select.value === '__outro';
-    texto.hidden = !outro;
-    if (outro) texto.focus(); else texto.value = '';
-    limparMensagens();
-  });
-}
-
-const valorDe = (nomeCampo) => {
-  const select = form.elements[nomeCampo];
-  if (!select) return '';
-  return select.value === '__outro'
-    ? form.elements[nomeCampo + 'Outro'].value.trim()
-    : select.value;
-};
 
 /* ---------- mensagens ---------- */
 const caixa = $('#mensagens');
@@ -161,13 +143,13 @@ async function salvar(ev) {
   const registro = {
     id: novoId(),
     data: form.elements.data.value,
-    operador: valorDe('operador'),
+    operador: form.elements.operador.value.trim(),
     maquina: form.elements.maquina.value,
     hIni: num(form.elements.hIni.value),
     hFim: num(form.elements.hFim.value),
-    local: valorDe('local'),
-    vala: form.elements.vala.value,
-    atividade: valorDe('atividade'),
+    local: form.elements.local.value.trim(),
+    vala: form.elements.vala.value.trim(),
+    atividade: form.elements.atividade.value.trim(),
     obs: form.elements.obs.value.trim(),
     criadoEm: new Date().toISOString(),
     entregue: false,
@@ -218,29 +200,13 @@ async function salvar(ev) {
 export async function iniciarOperador(irParaEntrega) {
   aoEntregar = irParaEntrega;
 
-  encher(form.elements.operador, OPERADORES, { vazio: 'Escolha…' });
-  encher(form.elements.maquina, MAQUINAS.map((m) => [m.id, m.nome]),
-    { vazio: 'Escolha…', comOutro: false });
-  encher(form.elements.local, LOCAIS, { vazio: 'Escolha…' });
-  encher(form.elements.atividade, ATIVIDADES, { vazio: 'Escolha…' });
-  encher(form.elements.vala, VALAS, { vazio: '—', comOutro: false });
-
-  ligarOutro('operador');
-  ligarOutro('local');
-  ligarOutro('atividade');
+  encher(form.elements.maquina, MAQUINAS.map((m) => [m.id, m.nome]), { vazio: 'Escolha…' });
 
   form.elements.data.value = hoje();
   form.elements.data.max = hoje();
 
   const [op, mq] = await Promise.all([db.ler('ultimoOperador'), db.ler('ultimaMaquina')]);
-  if (op) {
-    if (OPERADORES.includes(op)) form.elements.operador.value = op;
-    else {
-      form.elements.operador.value = '__outro';
-      form.elements.operadorOutro.hidden = false;
-      form.elements.operadorOutro.value = op;
-    }
-  }
+  if (op) form.elements.operador.value = op;
   if (mq) form.elements.maquina.value = mq;
 
   form.elements.hIni.addEventListener('input', atualizarConta);

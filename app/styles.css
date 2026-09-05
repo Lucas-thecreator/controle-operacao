@@ -85,8 +85,6 @@ input.errado { border-color: var(--erro); background: var(--erro-fundo); }
 
 .dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .dupla label { margin-bottom: 14px; }
-.campo-outro { margin: -6px 0 14px; }
-
 .dica, .conta {
   margin: -4px 0 14px;
   padding: 10px 12px;

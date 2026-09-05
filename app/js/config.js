@@ -26,28 +26,20 @@ export const MAQUINAS = [
   { id: 'TP52',  nome: 'TP 52',   planilha: 'TP 52' },
 ];
 
-/* Operadores — os 5 confirmados na planilha. O caderno tinha
-   mais nomes, mas a letra não permitiu ler com segurança
-   ("Ronaldo"? "Reinaldo"? / "Ailson"? "Gilson"?).
-   Enquanto a lista não estiver completa, ninguém fica travado:
-   existe a opção "Outro" em todo campo de lista.              */
+/* Operador, local, vala e tipo de serviço são texto livre no
+   formulário — o operador digita. Estas três listas (operador,
+   local, atividade) não aparecem mais como opções: elas só
+   servem para o QR ficar menor (um valor que bate com a lista
+   vira 1 caractere em vez do texto inteiro; o que não bate vai
+   por extenso, sem erro). Ver app/js/pack.js.                  */
 export const OPERADORES = [
   'Armando', 'Elismar', 'Glauber', 'Gustavo', 'Pedro',
 ];
 
-/* Locais — no caderno vinha tudo junto e escrito de 6 jeitos
-   ("CI I", "Cl I", "CLA II A", "Classe 2A"). Aqui vira lista. */
 export const LOCAIS = [
   'Classe I', 'Classe II', 'Classe II A',
 ];
 
-/* Vala — no caderno aparecia colada no Local ("Vala 03 / Cl I").
-   Hoje essa informação SE PERDE na transcrição para o Excel.
-   Vira campo próprio e opcional, em coluna extra no final.     */
-export const VALAS = ['1', '2', '3', '4', '5', '6', '7', '8'];
-
-/* Tipos de serviço — união do que aparece no caderno e na
-   planilha, já com a grafia padronizada.                       */
 export const ATIVIDADES = [
   'Compactação de resíduos',
   'Empurrar material',
@@ -66,8 +58,6 @@ export const REGRAS = {
   horimetroMax: 100000,
 };
 
-export const ROTULO_OUTRO = 'Outro (escrever)';
-
 /* Código do modo "Faço a planilha".
 
    O repositório é público, então aqui fica só o HASH — o código
@@ -79,4 +69,4 @@ export const ROTULO_OUTRO = 'Outro (escrever)';
    Use 10+ caracteres com letras. Ver app/js/codigo.js para o
    que essa proteção alcança e o que ela não alcança.          */
 export const CODIGO_SAL = '1bfefdf181039540a901d50247232740';
-export const CODIGO_HASH = '6b665ac649ad383bb1c73594d98ed80fe8aff0f6da47c4f604e7ffe6eadc8b6b';
+export const CODIGO_HASH = '3c7dbfb59aafe96a22897fa9ff8e8671d99d98735dae3de733d048857dd51f43';
