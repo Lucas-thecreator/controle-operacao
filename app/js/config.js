@@ -69,4 +69,4 @@ export const REGRAS = {
    Use 10+ caracteres com letras. Ver app/js/codigo.js para o
    que essa proteção alcança e o que ela não alcança.          */
 export const CODIGO_SAL = '1bfefdf181039540a901d50247232740';
-export const CODIGO_HASH = '3c7dbfb59aafe96a22897fa9ff8e8671d99d98735dae3de733d048857dd51f43';
+export const CODIGO_HASH = 'de8d02e2af73f091d3e00859ae13be908110d5cd44342a81d34ce9dff6e22140';
