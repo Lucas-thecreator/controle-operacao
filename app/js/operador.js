@@ -3,12 +3,12 @@
    Duas obsessões aqui:
    1) não perder registro — grava local, sempre, e nunca apaga
       o que já foi entregue;
-   2) data e máquina continuam por lista (evitam erro de digitação
-      em algo que é sempre o mesmo conjunto fechado); os demais
-      campos são texto livre, e a conta das horas aparece antes
-      de salvar.
+   2) máquina, local e tipo de serviço são lista fechada — e o
+      serviço só mostra o que a máquina escolhida faz; operador,
+      vala e observação são texto livre. A conta das horas
+      aparece antes de salvar.
    ============================================================ */
-import { MAQUINAS } from './config.js';
+import { MAQUINAS, LOCAIS, atividadesDa } from './config.js';
 import * as db from './db.js';
 import { validar, acharVizinhos } from './validacao.js';
 import { horasDe, nomeMaquina, brHorimetro } from './planilha.js';
@@ -149,7 +149,7 @@ async function salvar(ev) {
     hFim: num(form.elements.hFim.value),
     local: form.elements.local.value.trim(),
     vala: form.elements.vala.value.trim(),
-    atividade: form.elements.atividade.value.trim(),
+    atividade: atividadeEscolhida(),
     obs: form.elements.obs.value.trim(),
     criadoEm: new Date().toISOString(),
     entregue: false,
@@ -196,11 +196,50 @@ async function salvar(ev) {
   await pintarLista();
 }
 
+/* ---------- tipo de serviço depende da máquina ---------- */
+const OUTRA = '__outra';
+
+function encherAtividades() {
+  const campo = form.elements.atividade;
+  const maquina = form.elements.maquina.value;
+  if (!maquina) {
+    encher(campo, [], { vazio: 'Escolha a máquina primeiro' });
+    campo.disabled = true;
+    mostrarOutra();
+    return;
+  }
+  /* mantém a escolha só se a nova máquina também faz aquilo —
+     nunca sobra um serviço que a máquina não faz. "Outra" vale
+     para qualquer máquina, então também é mantida.             */
+  const escolhida = campo.value;
+  const lista = atividadesDa(maquina);
+  encher(campo, lista, { vazio: 'Escolha…' });
+  campo.append(new Option('Outra (escrever)', OUTRA));
+  campo.disabled = false;
+  if (escolhida === OUTRA || lista.includes(escolhida)) campo.value = escolhida;
+  mostrarOutra();
+}
+
+/* o campo de texto só aparece com "Outra" escolhida */
+function mostrarOutra() {
+  const texto = form.elements.atividadeOutra;
+  const ativa = form.elements.atividade.value === OUTRA;
+  if (ativa === !texto.hidden) return;
+  texto.hidden = !ativa;
+  if (ativa) texto.focus();
+}
+
+/* o que vai para o registro: o item da lista, ou o que foi digitado */
+const atividadeEscolhida = () => (form.elements.atividade.value === OUTRA
+  ? form.elements.atividadeOutra.value.trim()
+  : form.elements.atividade.value);
+
 /* ---------- entrada ---------- */
 export async function iniciarOperador(irParaEntrega) {
   aoEntregar = irParaEntrega;
 
   encher(form.elements.maquina, MAQUINAS.map((m) => [m.id, m.nome]), { vazio: 'Escolha…' });
+  encher(form.elements.local, LOCAIS, { vazio: 'Escolha…' });
 
   form.elements.data.value = hoje();
   form.elements.data.max = hoje();
@@ -208,7 +247,10 @@ export async function iniciarOperador(irParaEntrega) {
   const [op, mq] = await Promise.all([db.ler('ultimoOperador'), db.ler('ultimaMaquina')]);
   if (op) form.elements.operador.value = op;
   if (mq) form.elements.maquina.value = mq;
+  encherAtividades();
 
+  form.elements.maquina.addEventListener('change', encherAtividades);
+  form.elements.atividade.addEventListener('change', mostrarOutra);
   form.elements.hIni.addEventListener('input', atualizarConta);
   form.elements.hFim.addEventListener('input', atualizarConta);
   form.addEventListener('input', () => {

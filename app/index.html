@@ -82,7 +82,7 @@
     <p id="conta-horas" class="conta" hidden></p>
 
     <label>Local
-      <input type="text" name="local" required placeholder="Local">
+      <select name="local" required></select>
     </label>
 
     <label>Vala <span class="opcional">(se tiver)</span>
@@ -90,8 +90,9 @@
     </label>
 
     <label>Tipo de serviço
-      <input type="text" name="atividade" required placeholder="Tipo de serviço">
+      <select name="atividade" required></select>
     </label>
+    <input type="text" name="atividadeOutra" class="campo-outro" autocomplete="off" placeholder="Escreva o serviço" hidden>
 
     <label>Observação <span class="opcional">(se precisar)</span>
       <input type="text" name="obs" autocomplete="off" placeholder="">

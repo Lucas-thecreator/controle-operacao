@@ -148,11 +148,10 @@ async function lerFotos(arquivos) {
 /* ---------- texto colado ---------- */
 async function lerTextoColado() {
   const bruto = $('#texto-colado').value;
-  const linhas = bruto.split(/\s+/).filter((l) => l.startsWith('S1|'));
+  const linhas = bruto.split(/\s+/).filter((l) => /^S[12]\|/.test(l));
   if (!linhas.length) {
     recibo('aviso', 'Não achei dados nesse texto.', [
-      'O texto precisa conter as linhas que começam com "S1|".',
-      'Copie a mensagem inteira, sem cortar nada.',
+      'Copie a mensagem inteira que o operador mandou, sem cortar nada.',
     ]);
     return;
   }

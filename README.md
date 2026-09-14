@@ -105,15 +105,20 @@ pegar sinal. Não precisa ser no local de trabalho.
 
 Tudo em [`app/js/config.js`](app/js/config.js):
 
-- **Operadores** — só os nomes que apareciam na planilha estão na lista. O
-  caderno tinha mais, mas a letra não permitiu ler com segurança. Enquanto a
-  lista não fecha, ninguém trava: todo campo de lista tem "Outro (escrever)".
+- **Operador e vala** — texto livre: o operador digita.
 - **Máquinas** — as 11 do Forms estão lá. Só a TEA 279 aparecia como
   `(Locado)` na planilha; confirmar quais outras são locadas, porque isso vai
   para a coluna *Máquina* do Excel.
-- **Locais e tipos de serviço** — montados a partir do que apareceu no caderno
-  e na planilha. Ela deve conferir se falta algum.
-- **`CODIGO_SUPERVISORA`** — trocar antes de publicar e passar só para ela.
+- **Local** — lista fechada de 13, como ela mandou.
+- **Tipo de serviço** — lista por máquina: cada uma só mostra o que faz.
+  **TP 44 e TP 45 não vieram na lista** e, até virem, mostram todas as
+  atividades. Toda lista termina em "Outra (escrever)", para o serviço que não
+  está previsto — quando um desses começar a se repetir na planilha, é sinal
+  de acrescentar aqui.
+- **`CODIGO_HASH`** — gerado com `npm run codigo`; o código em si fica só com ela.
+
+Pode mexer nas listas sem medo: o QR leva o texto, não a posição na lista, então
+celular que ainda não se atualizou não troca um serviço por outro.
 
 Mudou aqui? Publique de novo — os celulares se atualizam sozinhos.
 

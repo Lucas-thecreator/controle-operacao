@@ -26,28 +26,117 @@ export const MAQUINAS = [
   { id: 'TP52',  nome: 'TP 52',   planilha: 'TP 52' },
 ];
 
-/* Operador, local, vala e tipo de serviço são texto livre no
-   formulário — o operador digita. Estas três listas (operador,
-   local, atividade) não aparecem mais como opções: elas só
-   servem para o QR ficar menor (um valor que bate com a lista
-   vira 1 caractere em vez do texto inteiro; o que não bate vai
-   por extenso, sem erro). Ver app/js/pack.js.                  */
-export const OPERADORES = [
-  'Armando', 'Elismar', 'Glauber', 'Gustavo', 'Pedro',
-];
+/* Operador e vala são texto livre — o operador digita.
+   Local e tipo de serviço são lista fechada, abaixo.
 
+   Pode mexer nestas listas à vontade: o QR leva o texto, não a
+   posição na lista, então celular desatualizado não embaralha
+   nada do lado dela. Ver app/js/pack.js.                       */
+
+/* Local — na ordem em que ela mandou.                          */
 export const LOCAIS = [
-  'Classe I', 'Classe II', 'Classe II A',
+  'Classe II',
+  'Classe I',
+  'RCD',
+  'ETE',
+  'Compostagem',
+  'Oficina',
+  'Bota fora',
+  'Almoxarifado Aberto',
+  'Balança',
+  'Quarentena',
+  'APP',
+  'Municipal',
+  'Administrativo',
 ];
 
-export const ATIVIDADES = [
-  'Compactação de resíduos',
-  'Empurrar material',
-  'Cobertura de manta',
-  'Ampliação Classe II',
-  'Rampa',
+/* Tipo de serviço — cada máquina só mostra o que ela faz.
+   Texto exatamente como veio da planilha dela, porque é o que
+   vai para a coluna "Tipo de serviço" do Excel.                */
+const SERVICOS_TEA = [
+  'Compactação de Resíduos',
+  'Cobertura de resíduo',
+  'Empurrando entulho',
+  'Ampliação',
+  'Acesso',
   'Pátio',
+  'Terraplanagem',
 ];
+
+const SERVICOS_EH = [
+  'Remonte de resíduos',
+  'Carregamento de resíduos',
+  'Solidificação',
+  'Dreno',
+  'Carregamento de terra',
+  'Biogás',
+  'Cobertura de resíduo',
+  'Carregamento de entulho',
+  'Escavação',
+  'Auxilio descarregamento',
+];
+
+export const ATIVIDADES_POR_MAQUINA = {
+  TEA279: SERVICOS_TEA,
+  TEA340: SERVICOS_TEA,
+  EH05: SERVICOS_EH,
+  EH09: SERVICOS_EH,
+  TP52: [
+    'Sucção de lodo',
+    'Sucção de óleo',
+    'Abafamento',
+    'Roçada',
+    'Sucção de chorume',
+    'Aspersão de água',
+    'Sucção de fossa',
+    'Sucção de resíduo',
+    'Transferência',
+  ],
+  TE03: [
+    'Cobertura de resíduo',
+    'Empurrando entulho',
+    'Compactação de Resíduos',
+    'Cobertura da Manta PEAD',
+    'Arrumando acesso',
+    'Empurrando terra',
+    'Pátio',
+    'Conformização de talude',
+    'Movimentação de terra',
+    'Aceiro',
+    'Terraplanagem',
+  ],
+  EP02: [
+    'Descarga e movimentação de tambores',
+    'Descarga e movimentação de IBCs',
+    'Descarga',
+  ],
+  PP01: [
+    'Carregamento de Pó de Celulose e Terra',
+    'Carregamento de Pedra',
+    'Remonte de resíduos',
+    'Movimentação de tambores',
+    'Dreno na frente de resíduos',
+    'Aceiro',
+    'Limpeza',
+    'Carregamento de manta',
+    'Carregamento de entulho',
+    'Acesso',
+  ],
+  RE01: [
+    'Solidificação',
+  ],
+  /* TP 44 e TP 45 não vieram na lista dela. Até virem, mostram
+     todas as atividades — ver atividadesDa(), logo abaixo.     */
+};
+
+/* Serviços de uma máquina. Máquina sem lista própria recebe
+   todos, em ordem alfabética: o operador nunca fica sem opção. */
+export function atividadesDa(maquinaId) {
+  const propria = ATIVIDADES_POR_MAQUINA[maquinaId];
+  if (propria) return propria;
+  const todas = new Set(Object.values(ATIVIDADES_POR_MAQUINA).flat());
+  return [...todas].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
 
 /* Regras de validação (limites de sanidade, não de bloqueio,
    exceto onde marcado como bloqueante no formulário).          */

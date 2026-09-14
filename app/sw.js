@@ -2,7 +2,9 @@
    Estratégia: cache primeiro, rede só para atualizar em segundo
    plano. Quem está no campo nunca espera por rede.            */
 
-const CACHE = 'controle-operacao-v1';
+/* troque o número quando mudar formulário ou formato de dados:
+   força cada celular a descartar a versão antiga do cache      */
+const CACHE = 'controle-operacao-v2';
 
 const ARQUIVOS = [
   './',

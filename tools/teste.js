@@ -207,5 +207,77 @@ const outraMaquina = acharVizinhos(
 ok(outraMaquina.anterior && outraMaquina.anterior.id === 'h0',
   'registro de outra máquina não entra na cadeia');
 
+console.log('\n=== 6. Listas de local e serviço ===');
+const cfg = await import('../app/js/config.js');
+
+ok(cfg.LOCAIS.length === 13, `13 locais (veio ${cfg.LOCAIS.length})`);
+ok([cfg.LOCAIS, ...Object.values(cfg.ATIVIDADES_POR_MAQUINA)].flat()
+  .every((t) => t.length > 0 && t === t.trim()),
+  'nenhum item com espaço sobrando nas pontas (a planilha dela tinha vários)');
+ok(Object.values(cfg.ATIVIDADES_POR_MAQUINA).every((l) => new Set(l).size === l.length),
+  'nenhuma máquina com serviço repetido');
+ok(Object.keys(cfg.ATIVIDADES_POR_MAQUINA).every((id) => cfg.MAQUINAS.some((m) => m.id === id)),
+  'toda lista de serviço aponta para uma máquina que existe');
+ok(cfg.MAQUINAS.every((m) => cfg.atividadesDa(m.id).length > 0),
+  'toda máquina tem ao menos um serviço para escolher');
+ok(cfg.atividadesDa('TP52').includes('Sucção de lodo') && !cfg.atividadesDa('TP52').includes('Pátio'),
+  'TP 52 mostra só o que ela faz');
+ok(cfg.atividadesDa('TEA279') === cfg.atividadesDa('TEA340'), 'TEA 279 e TEA 340 dividem a lista');
+ok(cfg.atividadesDa('TP44').includes('Sucção de lodo') && cfg.atividadesDa('TP44').includes('Pátio'),
+  'TP 44, sem lista própria, mostra todas');
+
+console.log('\n=== 7. QR não depende da versão da lista ===');
+/* O S1 mandava "serviço nº 3". Celular com lista velha e
+   supervisora com lista nova trocariam o serviço sem erro
+   nenhum. O S2 leva o texto dentro do próprio QR.             */
+const lerTudo = (partes) => {
+  const m = new Montador();
+  let r = null;
+  for (const p of partes) r = m.receber(p);
+  return r;
+};
+
+/* QR S1 de verdade, tirado do app antes desta mudança */
+const s1 = 'S1|1|1|9nowp|pq91k0h3,260905,3,6,3001.4,3002.8,0,,0,'
+  + '~abc123,260906,*Ronaldo,10,12.5,14,2,3,5,teste';
+const v1 = lerTudo([s1]);
+ok(v1.estado === 'completo' && v1.registros.length === 2,
+  'QR antigo (S1), de celular ainda não atualizado, continua sendo lido');
+const [a1, b1] = v1.registros;
+ok(a1.operador === 'Gustavo' && a1.maquina === 'TEA279' && a1.local === 'Classe I'
+  && a1.atividade === 'Compactação de resíduos',
+  'S1 é lido pelas listas da época, não pelas de hoje');
+ok(b1.operador === 'Ronaldo' && b1.maquina === 'TP52' && b1.local === 'Classe II A'
+  && b1.vala === '3' && b1.atividade === 'Pátio' && b1.obs === 'teste',
+  'S1 com texto livre misturado a índices');
+
+const foraDaLista = [
+  reg('n1', '2026-09-10', 3200, 3202),
+  { ...reg('n2', '2026-09-10', 3202, 3205), local: 'Balança', atividade: 'Serviço que não existe em lista nenhuma' },
+];
+const pS2 = empacotar(foraDaLista);
+ok(pS2.every((p) => p.startsWith('S2|')), 'o app agora gera S2');
+const v2 = lerTudo(pS2);
+ok(v2.estado === 'completo' && v2.registros[1].atividade === 'Serviço que não existe em lista nenhuma',
+  'S2 leva o texto: não precisa que a lista do outro aparelho seja igual');
+
+const semana = Array.from({ length: 60 }, (_, i) => ({
+  ...reg('w' + String(i).padStart(6, '0'), '2026-09-0' + (1 + (i % 5)),
+    3100 + i * 2, 3101.5 + i * 2, i % 3 ? 'Gustavo' : 'Armando'),
+  local: cfg.LOCAIS[i % 4],
+  atividade: cfg.atividadesDa('TEA279')[i % 5],
+  vala: i % 4 ? '' : '8',
+}));
+const partesSemana = empacotar(semana);
+const voltaSemana = lerTudo([...partesSemana].reverse());
+const campos = ['data', 'operador', 'maquina', 'hIni', 'hFim', 'local', 'vala', 'atividade', 'obs'];
+const identicos = voltaSemana.registros.filter((r) => {
+  const o = semana.find((x) => x.id === r.id);
+  return o && campos.every((c) => String(o[c]) === String(r[c]));
+}).length;
+ok(voltaSemana.estado === 'completo' && identicos === 60,
+  `60 registros em ${partesSemana.length} QRs, lidos de trás para frente, voltam idênticos (${identicos}/60)`);
+ok(partesSemana.every((p) => p.length <= 460), 'todos os QRs da semana dentro do limite de densidade');
+
 console.log(falhas === 0 ? '\nTUDO PASSOU\n' : `\n${falhas} FALHA(S)\n`);
 process.exit(falhas === 0 ? 0 : 1);
